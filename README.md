@@ -1,4 +1,4 @@
-# 🚀 AI Career Preparation Platform
+# 🚀 AI Resume Preparation Platform
 
 An AI-powered career development platform that helps users optimize their resumes, evaluate ATS readiness, prepare for interviews, and generate personalized learning plans based on their skills, experience, and target roles.
 
