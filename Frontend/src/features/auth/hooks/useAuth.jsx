@@ -1,15 +1,12 @@
-import { useContext , useEffect } from "react"
+import { useContext } from "react"
 import { AuthContext } from "../auth.context.jsx"
-
 import {
     login,
     register,
-    logout,
-    getMe
+    logout
 } from "../services/auth.api.jsx"
 
 export const useAuth = () => {
-
     const context = useContext(AuthContext)
 
     const {
@@ -20,94 +17,56 @@ export const useAuth = () => {
     } = context
 
     const handleLogin = async ({ email, password }) => {
-
         try {
-
             setLoading(true)
-
             const data = await login({ email, password })
-
-            if (!data) return
-
-            setUser(data.user)
-
+            if (data?.user) {
+                setUser(data.user)
+                return { success: true }
+            }
+            return { success: false, message: "Login failed" }
         } catch (err) {
-
-            console.log(err)
-
+            const message = err.response?.data?.message || "Invalid email or password"
+            return { success: false, message }
         } finally {
-
             setLoading(false)
-
         }
     }
 
     const handleRegister = async ({ username, email, password }) => {
-
         try {
-
             setLoading(true)
-
             const data = await register({
                 username,
                 email,
                 password
             })
-
-            if (data) {
+            if (data?.user) {
                 setUser(data.user)
+                return { success: true }
             }
-
+            return { success: false, message: "Registration failed" }
         } catch (err) {
-
-            console.log(err)
-
+            const message = err.response?.data?.message || "Registration failed"
+            return { success: false, message }
         } finally {
-
             setLoading(false)
-
         }
     }
 
     const handleLogout = async () => {
-
         try {
-
             setLoading(true)
-
             await logout()
-
             setUser(null)
-
+            return { success: true }
         } catch (err) {
-
-            console.log(err)
-
-        } finally {
-
-            setLoading(false)
-
-        }
-    }
-   
-   useEffect(() => {
-    const getAndSetUser = async () => {
-        try {
-            setLoading(true)
-
-            const data = await getMe()
-            setUser(data?.user || null)
-
-        } catch (err) {
-            console.log(err)
             setUser(null)
+            return { success: false, message: "Logout failed" }
         } finally {
             setLoading(false)
         }
     }
-    getAndSetUser()
-}, [])
-
 
     return {
         user,
