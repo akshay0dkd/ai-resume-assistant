@@ -129,7 +129,11 @@ Return ONLY valid JSON in this format:
 async function generatePdfFromHtml(htmlContent) {
     const browser = await puppeteer.launch({
         headless: true,
-        args: ["--no-sandbox", "--disable-setuid-sandbox"]
+        args: [
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--disable-dev-shm-usage"
+        ]
     })
 
     const page = await browser.newPage()

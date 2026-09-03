@@ -64,7 +64,7 @@ export const useAuth = () => {
 
         } finally {
 
-            setIsLoading(false)
+            setLoading(false)
 
         }
     }
@@ -73,7 +73,7 @@ export const useAuth = () => {
 
         try {
 
-            setIsLoading(true)
+            setLoading(true)
 
             await logout()
 
@@ -85,7 +85,7 @@ export const useAuth = () => {
 
         } finally {
 
-            setIsLoading(false)
+            setLoading(false)
 
         }
     }
