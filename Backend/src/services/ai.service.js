@@ -12,6 +12,8 @@ const groq = new Groq({
 // Debug check
 console.log("Groq Key Loaded:", !!process.env.GROQ_API_KEY)
 
+const MODEL_NAME = process.env.GROQ_MODEL || "llama-3.1-8b-instant";
+
 // ================= ZOD SCHEMA =================
 const interviewReportSchema = z.object({
     matchScore: z.number(),
@@ -120,7 +122,7 @@ Return ONLY valid JSON in this format:
 `
 
     const response = await groq.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
+        model: MODEL_NAME,
         messages: [{ role: "user", content: prompt }],
         temperature: 0.3,
         response_format: { type: "json_object" }
@@ -199,7 +201,7 @@ Return ONLY JSON:
 `
 
     const response = await groq.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
+        model: MODEL_NAME,
         messages: [{ role: "user", content: prompt }],
         temperature: 0.3,
         response_format: { type: "json_object" }
