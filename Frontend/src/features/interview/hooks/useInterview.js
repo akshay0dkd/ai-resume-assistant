@@ -19,15 +19,18 @@ export const useInterview = () => {
     setLoading(true)
     try {
         const response = await generateInterviewReport({ jobDescription, selfDescription, resumeFile })
-        setReport(response.interviewReport)
-        return response.interviewReport
+        if (response?.interviewReport) {
+            setReport(response.interviewReport)
+            return response.interviewReport
+        }
+        return null
     } catch (error) {
-        console.log(error)
-        return null  // ← already returns null here, that's fine
+        console.error("Generate report hook error:", error)
+        const message = error.response?.data?.message || error.message || "Failed to generate interview report"
+        throw new Error(message)
     } finally {
         setLoading(false)
     }
-   
 }
 
     const getReportById = async (interviewId) => {

@@ -5,26 +5,50 @@ import { useNavigate } from 'react-router'
 
 const Home = () => {
 
-    const { loading, generateReport,reports } = useInterview()
+    const { loading, generateReport, reports } = useInterview()
     const [ jobDescription, setJobDescription ] = useState("")
     const [ selfDescription, setSelfDescription ] = useState("")
+    const [ selectedFileName, setSelectedFileName ] = useState("")
+    const [ error, setError ] = useState("")
     const resumeInputRef = useRef()
 
     const navigate = useNavigate()
 
-    const handleGenerateReport = async () => {
-        const resumeFile = resumeInputRef.current.files[ 0 ]
-        const data = await generateReport({ jobDescription, selfDescription, resumeFile })
-        if(data?._id) {
-            navigate(`/interview/${data._id}`)
+    const handleFileChange = (e) => {
+        if (e.target.files && e.target.files[0]) {
+            setSelectedFileName(e.target.files[0].name)
+        } else {
+            setSelectedFileName("")
         }
-       // navigate(`/interview/${data._id}`)
+    }
+
+    const handleGenerateReport = async () => {
+        setError("")
+        const resumeFile = resumeInputRef.current?.files?.[0]
+        if (!jobDescription.trim()) {
+            setError("Please provide a target Job Description.")
+            return
+        }
+        if (!resumeFile && !selfDescription.trim()) {
+            setError("Please upload a Resume PDF or provide a Quick Self-Description.")
+            return
+        }
+
+        try {
+            const data = await generateReport({ jobDescription, selfDescription, resumeFile })
+            if (data?._id) {
+                navigate(`/interview/${data._id}`)
+            }
+        } catch (err) {
+            setError(err.message || "Failed to generate interview strategy. Please try again.")
+        }
     }
 
     if (loading) {
         return (
             <main className='loading-screen'>
-                <h1>Loading your interview plan...</h1>
+                <h1>Analyzing profile &amp; generating your interview plan...</h1>
+                <p style={{ marginTop: "1rem", color: "#a0aec0" }}>This usually takes about 10-20 seconds.</p>
             </main>
         )
     }
@@ -36,6 +60,21 @@ const Home = () => {
             <header className='page-header'>
                 <h1>Create Your Custom <span className='highlight'>Interview Plan</span></h1>
                 <p>Let our AI analyze the job requirements and your unique profile to build a winning strategy.</p>
+                {error && (
+                    <div style={{
+                        marginTop: "1.5rem",
+                        padding: "1rem",
+                        backgroundColor: "#fff1f0",
+                        border: "1px solid #ffa39e",
+                        borderRadius: "8px",
+                        color: "#cf1322",
+                        maxWidth: "600px",
+                        marginInline: "auto",
+                        textAlign: "center"
+                    }}>
+                        {error}
+                    </div>
+                )}
             </header>
 
             {/* Main Card */}
@@ -52,12 +91,13 @@ const Home = () => {
                             <span className='badge badge--required'>Required</span>
                         </div>
                         <textarea
+                            value={jobDescription}
                             onChange={(e) => { setJobDescription(e.target.value) }}
                             className='panel__textarea'
                             placeholder={`Paste the full job description here...\ne.g. 'Senior Frontend Engineer at Google requires proficiency in React, TypeScript, and large-scale system design...'`}
                             maxLength={5000}
                         />
-                        <div className='char-counter'>0 / 5000 chars</div>
+                        <div className='char-counter'>{jobDescription.length} / 5000 chars</div>
                     </div>
 
                     {/* Vertical Divider */}
@@ -82,9 +122,18 @@ const Home = () => {
                                 <span className='dropzone__icon'>
                                     <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 16 12 12 8 16" /><line x1="12" y1="12" x2="12" y2="21" /><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" /></svg>
                                 </span>
-                                <p className='dropzone__title'>Click to upload or drag &amp; drop</p>
-                                <p className='dropzone__subtitle'>PDF or DOCX (Max 5MB)</p>
-                                <input ref={resumeInputRef} hidden type='file' id='resume' name='resume' accept='.pdf,.docx' />
+                                <p className='dropzone__title'>
+                                    {selectedFileName ? `Selected: ${selectedFileName}` : "Click to upload or drag & drop"}
+                                </p>
+                                <p className='dropzone__subtitle'>PDF (Max 3MB)</p>
+                                <input
+                                    ref={resumeInputRef}
+                                    onChange={handleFileChange}
+                                    hidden
+                                    type='file'
+                                    id='resume'
+                                    name='resume'
+                                    accept='.pdf' />
                             </label>
                         </div>
 
@@ -95,6 +144,7 @@ const Home = () => {
                         <div className='self-description'>
                             <label className='section-label' htmlFor='selfDescription'>Quick Self-Description</label>
                             <textarea
+                                value={selfDescription}
                                 onChange={(e) => { setSelfDescription(e.target.value) }}
                                 id='selfDescription'
                                 name='selfDescription'
