@@ -50,12 +50,26 @@ const interviewReportSchema = z.object({
     title: z.string().describe("The title of the interview report") 
 })
 
+function extractJsonFromContent(content) {
+    if (!content) throw new Error("Empty response from AI");
+    let cleaned = content.trim();
+    if (cleaned.startsWith("```json")) {
+        cleaned = cleaned.replace(/^```json\s*/i, "").replace(/```\s*$/i, "");
+    } else if (cleaned.startsWith("```")) {
+        cleaned = cleaned.replace(/^```\s*/, "").replace(/```\s*$/i, "");
+    }
+    return JSON.parse(cleaned.trim());
+}
+
 // ================= INTERVIEW REPORT =================
 async function generateInterviewReport({
     resume,
     selfDescription,
     jobDescription
 }) {
+    if (!process.env.GROQ_API_KEY) {
+        throw new Error("GROQ_API_KEY is not configured on the server environment variables.");
+    }
 
 const prompt = `
 You are an expert technical interviewer.
@@ -63,10 +77,10 @@ You are an expert technical interviewer.
 Generate an interview report for this candidate:
 
 Resume:
-${resume}
+${resume || "Not provided"}
 
 Self Description:
-${selfDescription}
+${selfDescription || "Not provided"}
 
 Job Description:
 ${jobDescription}
@@ -117,10 +131,10 @@ Return ONLY valid JSON in this format:
     console.log("AI Response:", content)
 
     try {
-     const parsed = JSON.parse(content.trim())
+     const parsed = extractJsonFromContent(content)
      return interviewReportSchema.parse(parsed)
     } catch (err) {
-        console.error("JSON Parse Error:", err)
+        console.error("JSON Parse / Validation Error:", err)
         throw err
     }
 }
@@ -196,12 +210,13 @@ Return ONLY JSON:
     console.log("Resume AI Response:", content)
 
     try {
-      const jsonContent = JSON.parse(content.trim())
+      const jsonContent = extractJsonFromContent(content)
       if (!jsonContent.html) {
-      throw new Error("Groq did not return valid HTML for resume generation")     }
+        throw new Error("Groq did not return valid HTML for resume generation")
+      }
       return await generatePdfFromHtml(jsonContent.html)
     } catch (err) {
-        console.error("Resume JSON Error:", content)
+        console.error("Resume JSON Error:", content, err)
         throw err
     }
 }

@@ -14,23 +14,36 @@ const interviewReportModel = require("../models/interviewReport.model")
  */
 async function generateInterViewReportController(req, res) {
     try {
-        if (!req.file) {
-            return res.status(400).json({ message: "Resume file is required" })
-        }
-
-        const resumeContent = await pdfParse(req.file.buffer)  // ← correct usage
-
         const { selfDescription, jobDescription } = req.body
 
+        if (!jobDescription) {
+            return res.status(400).json({ message: "Job description is required" })
+        }
+
+        let resumeText = ""
+        if (req.file) {
+            try {
+                const resumeContent = await pdfParse(req.file.buffer)
+                resumeText = resumeContent.text || ""
+            } catch (err) {
+                console.error("PDF Parsing Error:", err)
+                return res.status(400).json({ message: "Failed to parse PDF file. Please ensure it is a valid text PDF." })
+            }
+        }
+
+        if (!resumeText && !selfDescription) {
+            return res.status(400).json({ message: "Either a valid Resume PDF or a Self Description is required." })
+        }
+
         const interViewReportByAi = await generateInterviewReport({
-            resume: resumeContent.text,
+            resume: resumeText,
             selfDescription,
             jobDescription
         })
 
         const interviewReport = await interviewReportModel.create({
             user: req.user.id,
-            resume: resumeContent.text,
+            resume: resumeText,
             selfDescription,
             jobDescription,
             ...interViewReportByAi
@@ -42,8 +55,8 @@ async function generateInterViewReportController(req, res) {
         })
 
     } catch (error) {
-        console.error(error)
-        res.status(500).json({ message: error.message })
+        console.error("Generate Interview Report Error:", error)
+        res.status(500).json({ message: error.message || "Failed to generate interview report" })
     }
 }
 
